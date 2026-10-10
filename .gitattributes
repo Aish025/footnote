@@ -1,0 +1,17 @@
+# Normalise text to LF in the repo and working tree on every OS (Windows dev, Linux CI/Docker).
+* text=auto eol=lf
+
+# Data files the eval and ingest code parse byte-for-byte: always LF.
+*.py    text eol=lf
+*.csv   text eol=lf
+*.jsonl text eol=lf
+*.json  text eol=lf
+*.md    text eol=lf
+*.toml  text eol=lf
+*.yml   text eol=lf
+*.sh    text eol=lf
+
+# Source documents: never touch bytes (keeps PDF integrity and stable hashes).
+*.pdf   binary
+*.html  -text
+*.htm   -text
