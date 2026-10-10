@@ -4,8 +4,9 @@ from pathlib import Path
 
 import pytest
 import yaml
-from corpus import MANIFEST_PATH, Manifest, load_manifest
 from pydantic import ValidationError
+
+from corpus import MANIFEST_PATH, Manifest, load_manifest
 
 
 def test_committed_manifest_is_valid() -> None:
