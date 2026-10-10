@@ -34,3 +34,10 @@
 - Why this one: No token or API budget needed; downloads only the docs subtree (~18 MB/version); markdown source is cleaner than rendered HTML; SHAs make the snapshot reproducible. Versions = the 5 kubernetes.io keeps online.
 - Would change if: Fetched issues mostly reference versions <1.33 → extend versions (old release branches exist).
 - Measured: 5 changelogs (1.9 MB) + 5 doc versions (7,989 md pages, 89 MB) in ~95 s; re-run skips all.
+
+## D-006: corpus_stats.py reports what Phase 2 will actually index
+- Decision: Typed CorpusStats from pure functions (issue_stats/release_notes_stats/docs_stats) + text and --markdown renderers; counts change entries, not raw bullets (skips TOC links and dependency bumps).
+- Options considered: Shell one-liners (wc/find); raw bullet counts; a notebook.
+- Why this one: Pure functions are unit-testable on a fake corpus; counting raw "- " lines inflated 1.33–1.37 entries 4,860 → real 3,327 (TOC + go.mod bumps). Also surfaces noise early: bot comments, incomplete comment threads, fix PRs without a release milestone (multi-hop gap).
+- Would change if: Phase 2 chunk counts disagree with these numbers → stats should read processed chunks instead.
+- Measured: release notes 3,327 entries (5 minors); docs 7,989 pages; issues pending fetch.
