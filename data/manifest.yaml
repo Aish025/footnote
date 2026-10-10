@@ -54,3 +54,9 @@ subset:
   # reproducible, and not biased towards the most popular products.
   per_bucket: 1000
   order_salt: footnote-v1
+
+# Q&A is optional evidence (CLAUDE.md): use it only if enough v1 products have any.
+# scripts/check_qa_overlap.py records the overlap either way (data/processed/qa_overlap.json).
+qa:
+  sources: [qa_2016, qa_2019]
+  min_matched_products: 50

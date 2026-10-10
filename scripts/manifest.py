@@ -51,10 +51,16 @@ class SubsetRule(BaseModel):
         return self
 
 
+class QARule(BaseModel):
+    sources: list[str]  # keys into `files`
+    min_matched_products: int = Field(gt=0)
+
+
 class Manifest(BaseModel):
     dataset: DatasetInfo
     files: dict[str, FileSpec]
     subset: SubsetRule
+    qa: QARule
 
 
 def load_manifest(path: Path = MANIFEST_PATH) -> Manifest:
