@@ -63,3 +63,10 @@ as a record of what was tried and why it no longer applies.
 - Why this one: Reviews are English; small model = cheaper embedding of ~10^6 chunks. Table is empty, so Phase 2 can change it with one ALTER.
 - Would change if: Phase 2 eval shows a larger model improves recall@5 enough to justify cost.
 - Measured: pending (Phase 2).
+
+## D-013: corpus_stats.py computes every figure in SQL
+- Decision: Fixed SQL queries over the loaded tables (products, reviews, qa, chunks); Python only formats. Chunk estimate = listing field groups + ceil(review chars / review_chunk_chars) + Q&A pairs, chunk size bound as a parameter from config.
+- Options considered: Count from JSONL files in Python (fast to write, but a second source of truth); pandas.
+- Why this one: Hard rule 5 — numbers come from the database. Stats double as a load check: they describe exactly what retrieval and aggregation will see. Also surfaces dedup risk (same user, same product, >1 review) and short-review noise early.
+- Would change if: Phase 2 real chunk counts differ from the estimate by >20% → replace the estimate with SELECT COUNT(*) FROM chunks.
+- Measured: pending (after load).
