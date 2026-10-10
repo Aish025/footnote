@@ -5,9 +5,10 @@ description = "Product evidence intelligence: shopper questions answered from li
 requires-python = ">=3.11"
 dependencies = [
     "pydantic>=2.6",
-    "pydantic-settings>=2.2",  # GITHUB_TOKEN and tuning from .env
+    "pydantic-settings>=2.2",  # DB connection and tunables from .env
     "pyyaml>=6.0",             # data/manifest.yaml
-    "httpx>=0.27",             # GitHub GraphQL + raw downloads (timeouts, headers)
+    "httpx>=0.27",             # streaming, resumable dataset downloads
+    "pg8000>=1.31",            # pure-Python Postgres driver with COPY (D-011)
 ]
 
 [project.optional-dependencies]

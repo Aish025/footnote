@@ -49,3 +49,17 @@ as a record of what was tried and why it no longer applies.
 - Why this one: Every selected product keeps ALL its reviews → counts are true for the stored data; 460K/1.29M products have no listing text, so they can't support listing_claim/conflict questions; hash order is reproducible and unbiased by popularity. No earbuds category exists in this file (Electronics holds them) → closest bucket is single-ear headsets.
 - Would change if: Golden-set authors can't find enough conflict/compatibility questions in the subset, or a bucket ends up too small (funnel shows it) → adjust buckets/band in the manifest.
 - Measured: pending (funnel recorded after the run).
+
+## D-011: Schema (products, reviews, qa, chunks) loaded with pg8000 COPY + idempotent upserts
+- Decision: db/schema.sql (IF NOT EXISTS); load_db.py parses JSONL into Pydantic rows, drops exact-duplicate keys (counted), COPYs batches into a temp staging table, upserts with ON CONFLICT DO UPDATE in one transaction per table. review_id = sha256(user_id|parent_asin|asin|timestamp)[:24] (dataset has no review id).
+- Options considered: psycopg 3 (compiled DLL blocked by Windows Application Control on the dev machine — not bypassed); psycopg2 (same issue); SQLAlchemy/pandas to_sql (row INSERTs, heavy deps); pg8000 (pure Python, supports COPY).
+- Why this one: pg8000 needs no native code; COPY loads ~10^6 rows in seconds; staging + upsert makes re-runs idempotent and keeps stable ids for re-indexing. Arrays/specs staged as JSONB and converted in SQL (no hand-built array literals).
+- Would change if: Load time for v2 (millions of reviews) is dominated by Python-side escaping → psycopg binary in Docker/CI where DLL policy doesn't apply.
+- Measured: pending (row counts after load).
+
+## D-012: chunks.embedding is vector(384) — provisional
+- Decision: Size the column for BAAI/bge-small-en-v1.5 (384-d, English) via Settings.embedding_dim; no HNSW index yet.
+- Options considered: bge-m3 (1024-d, multilingual — not needed for English reviews); untyped `vector` (HNSW needs a fixed dimension).
+- Why this one: Reviews are English; small model = cheaper embedding of ~10^6 chunks. Table is empty, so Phase 2 can change it with one ALTER.
+- Would change if: Phase 2 eval shows a larger model improves recall@5 enough to justify cost.
+- Measured: pending (Phase 2).
