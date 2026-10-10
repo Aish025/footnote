@@ -48,3 +48,10 @@
 - Why this one: Generated table can't drift from the data; the gate requires stats in README.
 - Would change if: n/a
 - Measured: n/a
+
+## D-008: Issue fetch result — 2,799 issues (below ~5K); version gap surfaced
+- Decision: Keep the strict "merged, GitHub-linked fix PR" filter and the 2022-01-01 floor; report the shortfall instead of loosening silently. Scope change left to the owner.
+- Options considered: Lower closed_after to ~2019 (≈5K, older versions); keep unmerged-PR issues (+800, weaker fix ground truth); accept 2,799; add more repos (v2 plan).
+- Why this one: The merged fix is the ground truth for fix_lookup/multi_hop; diluting it to hit a round number would weaken every later metric.
+- Would change if: Golden-set authoring (Phase 1) can't find 30–40 good questions in 2,799 issues, or the owner sets the target firmly at 5K.
+- Measured: 2,799 issues / 2,945 fix PRs / 27,463 comments; 237 pages, ~11 min, ~500 GraphQL points; 800 skipped; fixes span v1.24–v1.38, only 924 (33%) in docs range 1.33–1.37.

@@ -60,8 +60,8 @@ Gate: about 5K recent closed Kubernetes issues with linked fixes, plus matching 
 ## 4. Trade-offs and limits
 
 - **Missed fix links.** Only issues GitHub links to a merged PR are kept. An issue fixed by a PR that just says "fixes kubernetes/kubernetes#123" across repos, or by a cherry-pick, can be missed. The kept issues are "fixed issues GitHub knows about", which is a biased sample. Fix: parse "Fixes #N" from PR bodies; measure the miss rate on the golden set.
-- **The window may not reach 5K.** If recent windows hold fewer merged-fix issues than expected, the fetch walks back further, towards 2022, and gets older than "recent". The stats print the actual closed range.
-- **Version coverage gap.** Docs and changelogs cover 1.33–1.37, but older issues may concern 1.2x. `corpus_stats` shows fix-PR milestones so the gap is visible.
+- **The corpus is below the ~5K target (measured).** Back to 2022-01-01 there are only 2,799 closed issues with a merged, GitHub-linked fix, roughly 600 a year. Another 800 had a linked PR that was never merged. Getting to 5K means going back to about 2019 (older versions, staler fixes) or loosening the "merged fix" rule. That is a scope decision for the owner (D-008).
+- **Version coverage gap (measured).** Fix PRs ship in v1.24–v1.38, about 150–220 per minor. Docs and changelogs cover only 1.33–1.37, so just 924 of 2,799 issues (33%) can complete issue → fix → release → docs. Fix: add the 1.24–1.32 and 1.38 changelogs (cheap) and older doc branches.
 - **Upstream drift.** Comments can be edited or deleted after fetching. Issue snapshots are not pinned to a SHA; there is only `fetched_at`.
 - **Bot detection is heuristic.** `k8s-ci-robot` is a normal "User" account on GitHub, so the stats also match login names ending in `-bot`/`-robot`. Real filtering is Phase 2.
 - **Secrets are stored raw in data/raw.** Redaction happens before indexing (Phase 2, hard rule 8). data/raw is local and gitignored, but it is not clean.
@@ -73,7 +73,12 @@ Gate: about 5K recent closed Kubernetes issues with linked fixes, plus matching 
 - Docs: 7,989 markdown pages across 5 versions (1,495 → 1,721 per version), 66 MB of markdown. Fetched in about 95 s; a re-run skips everything.
 - Postgres 17.11 + pgvector 0.8.7 came up healthy via `docker compose up -d`.
 - Unit tests: 25 passed. ruff: clean.
-- Issues: **pending GITHUB_TOKEN**. See the README table once `fetch_issues.py` has run.
+- Issues (fetched 2026-10-10):
+  - **Fetch:** 2,799 issues with a merged fix PR, closed 2022-01-03 → 2026-09-30. It took 237 pages and 124 windows in about 11 minutes, using about 500 of the 5,000 hourly GraphQL points. 800 issues were skipped (linked PR never merged).
+  - **Fix PRs:** 2,945 unique, 2,774 with a release milestone, 172 issues with more than one fix PR.
+  - **Comments:** 27,463 in total (median 6 per issue, max 223), no incomplete threads; 3,817 (14%) from bots.
+  - **Labels:** kind/bug 1,231, kind/feature 412, kind/failing-test 378, kind/flake 319. The top SIGs are node (751) and api-machinery (509).
+  - **Version coverage:** only 924 issues (33%) have a fix shipped in 1.33–1.37.
 - Retrieval and answer quality: pending (Phase 2).
 
 ## 6. Interview questions
@@ -115,7 +120,14 @@ Gate: about 5K recent closed Kubernetes issues with linked fixes, plus matching 
 10. **Why Postgres + pgvector and not a vector DB?**
     The data is relational (issue → PR → release → docs), and filtering by version, labels and state is central. SQL joins plus vector search in one transactional store keeps the system simple. It would be revisited if latency or recall breaks at 1M+ chunks (D-001).
 
-11. **What did corpus_stats catch?**
+11. **You aimed for 5K issues and got 2,799. Why, and what would you do?**
+    The fetch walked every 14-day window back to the 2022 floor. Kubernetes only closes about 600 issues a year with a merged, GitHub-linked fix PR. The options:
+    - Go back to about 2019. This means older versions and fixes that no longer apply.
+    - Accept issues without a merged fix. This weakens the "how was it fixed" ground truth.
+    - Add more repos (planned for v2).
+    I reported the shortfall instead of quietly loosening the filter, because the merged fix is what makes fix-lookup answers verifiable.
+
+12. **What did corpus_stats catch?**
     Counting `- ` bullets overcounted release-note entries by 46%: TOC links and go.mod dependency bumps aren't changes. A wrong denominator now would have distorted every later per-source metric.
 
 ## 7. Try it yourself
