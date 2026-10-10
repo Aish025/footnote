@@ -1,0 +1,33 @@
+# What the Phase 0 corpus contains. Scripts read ONLY this file for scope, so the corpus is
+# reproducible: same manifest + same scripts -> same downloads, same subset, same tables.
+# Validated by scripts/manifest.py.
+
+dataset:
+  name: Amazon Reviews 2023 (McAuley Lab, UC San Diego)
+  homepage: https://amazon-reviews-2023.github.io/
+  category: Cell_Phones_and_Accessories
+  # Research-oriented use; the dataset owners do not own the underlying Amazon data.
+  # Footnote uses it for a non-commercial portfolio project only.
+  licence_note: Research / non-commercial use only. Underlying data belongs to Amazon and its users.
+
+# Official McAuley Lab host. `bytes` is the expected size (Content-Length on 2026-10-10); the
+# downloader refuses a file of any other size. sha256 is recorded on first download.
+files:
+  meta:
+    url: https://mcauleylab.ucsd.edu/public_datasets/data/amazon_2023/raw/meta_categories/meta_Cell_Phones_and_Accessories.jsonl.gz
+    path: meta_Cell_Phones_and_Accessories.jsonl.gz
+    bytes: 857990660
+  reviews:
+    url: https://mcauleylab.ucsd.edu/public_datasets/data/amazon_2023/raw/review_categories/Cell_Phones_and_Accessories.jsonl.gz
+    path: Cell_Phones_and_Accessories.jsonl.gz
+    bytes: 2532539010
+  # Older McAuley Q&A datasets (2016 single-answer, 2019 multi-answer). Used ONLY if their
+  # ASINs overlap the v1 subset (checked by scripts/check_qa_overlap.py).
+  qa_2016:
+    url: https://mcauleylab.ucsd.edu/public_datasets/data/amazon/qa/qa_Cell_Phones_and_Accessories.json.gz
+    path: qa_Cell_Phones_and_Accessories.json.gz
+    bytes: 7109952
+  qa_2019:
+    url: https://mcauleylab.ucsd.edu/public_datasets/data/amazon/qa/icdm/QA_Cell_Phones_and_Accessories.json.gz
+    path: QA_Cell_Phones_and_Accessories_2019.json.gz
+    bytes: 18550333

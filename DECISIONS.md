@@ -35,3 +35,10 @@ as a record of what was tried and why it no longer applies.
 
 ## D-008: Superseded — Kubernetes issue fetch result (2,799 issues, version gap)
 - Kubernetes-only; data and scripts removed.
+
+## D-009: Download Amazon Reviews 2023 (Cell_Phones_and_Accessories) gzipped from the McAuley Lab host
+- Decision: data/manifest.yaml lists 4 files (meta 858 MB, reviews 2.53 GB, Q&A 2016 7 MB, Q&A 2019 18.5 MB) with expected bytes; download_data.py streams to .part, resumes via HTTP Range, rejects wrong sizes, records sha256 in data/raw/_downloads.json.
+- Options considered: Hugging Face `datasets` (adds a heavy dep + cache; same files uncompressed 13.3 GB); HF direct .jsonl (9.3 + 4.0 GB); lab-hosted .jsonl.gz (3.4 GB).
+- Why this one: Official source, 4× smaller, streamed and gunzipped on the fly later (no 13 GB on disk); no new dependency (httpx already present). Range resume tested: truncated file → 206 → identical sha256.
+- Would change if: The lab host disappears or throttles below ~1 MB/s → switch URLs to the HF mirror (same content).
+- Measured: ~2.4 MB/s → ~25 min for the full set; Q&A files 13 s / 9 s.
