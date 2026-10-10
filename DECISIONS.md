@@ -20,3 +20,10 @@
 - Why this one: One reviewable file defines "what is in the corpus"; pinned closed_before makes re-runs select the same issues; typed models catch upstream schema drift at fetch time, not at Phase 2.
 - Would change if: Multiple repos (v2) make one flat file unwieldy → one manifest section per source.
 - Measured: n/a (config)
+
+## D-004: Issues via GitHub GraphQL search in date windows, merged closing PR = the fix
+- Decision: GraphQL `search` (`is:issue is:closed linked:pr closed:<window>`), 14-day windows newest-first, 20 issues/request with comments, labels and closing PRs inline; keep issues whose closing PR is merged; checkpoint cursor after every page.
+- Options considered: REST (1 call per issue + per comments page + timeline → ~4–5 calls/issue); GH Archive/BigQuery dumps; scraping. Fix-link source: closing references vs. close event vs. text "Fixes #N" parsing.
+- Why this one: GraphQL fetches ~20 issues with their PRs in one request (fits 5K points/h); windows dodge the 1,000-result search cap; both closing references and close events are used and deduped. Rate limits: proactive pause at <100 points, Retry-After/reset on 403/429, backoff + halve page size on 5xx.
+- Would change if: >5% of golden-set issues lack a found fix PR (link miss) → add "Fixes #N" body parsing; or v2 volume (100K+) → incremental `updated:>since` sync.
+- Measured: 13 unit tests on pure logic; live fetch pending GITHUB_TOKEN.

@@ -19,7 +19,8 @@ class Settings(BaseSettings):
     raw_content_url: str = "https://raw.githubusercontent.com"
 
     request_timeout_s: float = 60.0
-    max_retries: int = 6
+    max_retries: int = 8  # total retries per request (rate limits + server errors)
+    max_server_retries: int = 3  # 5xx/timeouts before giving up (caller then shrinks the page)
     backoff_base_s: float = 2.0  # exponential backoff: base ** attempt seconds
     # Pause before the primary limit is exhausted (GraphQL budget: 5,000 points/hour).
     min_remaining_points: int = 100
