@@ -27,3 +27,10 @@
 - Why this one: GraphQL fetches ~20 issues with their PRs in one request (fits 5K points/h); windows dodge the 1,000-result search cap; both closing references and close events are used and deduped. Rate limits: proactive pause at <100 points, Retry-After/reset on 403/429, backoff + halve page size on 5xx.
 - Would change if: >5% of golden-set issues lack a found fix PR (link miss) → add "Fixes #N" body parsing; or v2 volume (100K+) → incremental `updated:>since` sync.
 - Measured: 13 unit tests on pure logic; live fetch pending GITHUB_TOKEN.
+
+## D-005: Release notes via SHA-pinned raw files; docs via sparse shallow git clone
+- Decision: CHANGELOG-<minor>.md for 1.33–1.37 from raw.githubusercontent at one SHA (git ls-remote); kubernetes/website content/en/docs per version branch via `git clone --depth 1 --filter=blob:none --sparse`; _meta.json records repo/ref/SHA; skip when SHA unchanged.
+- Options considered: GitHub contents API (1 call/file, ~8K files, burns rate limit); full website tarball (hundreds of MB incl. images/translations); scraping kubernetes.io HTML.
+- Why this one: No token or API budget needed; downloads only the docs subtree (~18 MB/version); markdown source is cleaner than rendered HTML; SHAs make the snapshot reproducible. Versions = the 5 kubernetes.io keeps online.
+- Would change if: Fetched issues mostly reference versions <1.33 → extend versions (old release branches exist).
+- Measured: 5 changelogs (1.9 MB) + 5 doc versions (7,989 md pages, 89 MB) in ~95 s; re-run skips all.

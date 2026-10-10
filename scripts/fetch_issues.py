@@ -334,6 +334,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--target", type=int, help="override manifest target_count")
     args = parser.parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+    logging.getLogger("httpx").setLevel(logging.WARNING)  # one line per request is noise
 
     spec = load_manifest().issues
     target = args.target or spec.target_count
