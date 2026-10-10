@@ -1,7 +1,7 @@
 [project]
 name = "footnote"
 version = "0.0.1"
-description = "Incident RAG for on-call engineers: similar past Kubernetes incidents, their fixes and versioned docs, every claim cited."
+description = "Product evidence intelligence: shopper questions answered from listing claims, reviews and Q&A, every claim cited, counts from SQL."
 requires-python = ">=3.11"
 dependencies = [
     "pydantic>=2.6",

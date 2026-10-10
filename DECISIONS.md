@@ -1,57 +1,37 @@
 # Decisions
 
+Scope history: airline policies → Kubernetes incidents → product evidence (current).
+Entries marked **Superseded** applied only to the Kubernetes incident scope; they are kept
+as a record of what was tried and why it no longer applies.
+
 ## D-001: PostgreSQL + pgvector as the single store (text, metadata, vectors)
-- Decision: One Postgres 17 + pgvector container (docker-compose.yml, image pgvector/pgvector:pg17); extension enabled by db/init; schema deferred to Phase 2.
+- Decision: One Postgres 17 + pgvector container (docker-compose.yml, image pgvector/pgvector:pg17); extension enabled by db/init.
 - Options considered: In-memory NumPy, Chroma, Qdrant, Postgres + pgvector.
-- Why this one: Data is relational (issue → fix PR → release → docs) and metadata filtering (labels, version, state) is core; one store means one source of truth, SQL joins and transactional upserts. HNSW available.
+- Why this one: Still applies, more strongly: products ↔ reviews ↔ Q&A are relational, metadata filters (product, verified, date, rating) are core, and hard rule 5 requires counts from SQL — the aggregates must live next to the evidence. HNSW available.
 - Would change if: p95 latency or recall@5 at 1M–10M chunks breaks the budget → compare against Qdrant in v3.
 - Measured: pending
 
 ## D-002: Corpus and secrets out of git; LF line endings everywhere
 - Decision: .gitignore covers data/raw/, data/processed/, .env*; .gitattributes forces LF for code/data/SQL/YAML and marks binaries.
 - Options considered: Commit a small sample corpus; Git LFS; rely on per-machine core.autocrlf.
-- Why this one: Hard rules 7 and 10. The corpus is large, changes upstream and may contain secrets from logs; the manifest + fetch scripts are the reproducible record. Owner is on Windows (autocrlf=true) but Docker/CI are Linux — CRLF breaks shell/SQL init scripts and JSONL parsing.
-- Would change if: Upstream issues get edited/deleted so re-fetches drift enough to move eval numbers → snapshot data/raw to object storage with a version id.
+- Why this one: Still applies (hard rules 7 and 11). The review corpus is GBs and contains PII; the manifest + scripts are the reproducible record. Windows dev vs. Linux Docker/CI.
+- Would change if: The upstream dataset changes or disappears → snapshot data/raw to object storage with a version id.
 - Measured: n/a (setup)
 
-## D-003: data/manifest.yaml is the single definition of the corpus
-- Decision: YAML manifest (issues window/target, release-note versions, docs versions→branches) validated by Pydantic in scripts/corpus.py; records (Issue/Comment/PullRequest) are Pydantic models; secrets/tuning via pydantic-settings.
-- Options considered: Hard-code scope in scripts; CLI flags only; CSV manifest (old project).
-- Why this one: One reviewable file defines "what is in the corpus"; pinned closed_before makes re-runs select the same issues; typed models catch upstream schema drift at fetch time, not at Phase 2.
-- Would change if: Multiple repos (v2) make one flat file unwieldy → one manifest section per source.
-- Measured: n/a (config)
+## D-003: Superseded — data/manifest.yaml for the Kubernetes corpus
+- The idea (one validated manifest defines the corpus) carries over to D-009; the Kubernetes content (issue window, docs branches) is removed.
 
-## D-004: Issues via GitHub GraphQL search in date windows, merged closing PR = the fix
-- Decision: GraphQL `search` (`is:issue is:closed linked:pr closed:<window>`), 14-day windows newest-first, 20 issues/request with comments, labels and closing PRs inline; keep issues whose closing PR is merged; checkpoint cursor after every page.
-- Options considered: REST (1 call per issue + per comments page + timeline → ~4–5 calls/issue); GH Archive/BigQuery dumps; scraping. Fix-link source: closing references vs. close event vs. text "Fixes #N" parsing.
-- Why this one: GraphQL fetches ~20 issues with their PRs in one request (fits 5K points/h); windows dodge the 1,000-result search cap; both closing references and close events are used and deduped. Rate limits: proactive pause at <100 points, Retry-After/reset on 403/429, backoff + halve page size on 5xx.
-- Would change if: >5% of golden-set issues lack a found fix PR (link miss) → add "Fixes #N" body parsing; or v2 volume (100K+) → incremental `updated:>since` sync.
-- Measured: 13 unit tests on pure logic; live fetch pending GITHUB_TOKEN.
+## D-004: Superseded — GitHub GraphQL issue fetch in date windows
+- Kubernetes-only. Lesson kept: report a shortfall against a target honestly rather than loosening the filter (fetch ended at 2,799 of ~5K).
 
-## D-005: Release notes via SHA-pinned raw files; docs via sparse shallow git clone
-- Decision: CHANGELOG-<minor>.md for 1.33–1.37 from raw.githubusercontent at one SHA (git ls-remote); kubernetes/website content/en/docs per version branch via `git clone --depth 1 --filter=blob:none --sparse`; _meta.json records repo/ref/SHA; skip when SHA unchanged.
-- Options considered: GitHub contents API (1 call/file, ~8K files, burns rate limit); full website tarball (hundreds of MB incl. images/translations); scraping kubernetes.io HTML.
-- Why this one: No token or API budget needed; downloads only the docs subtree (~18 MB/version); markdown source is cleaner than rendered HTML; SHAs make the snapshot reproducible. Versions = the 5 kubernetes.io keeps online.
-- Would change if: Fetched issues mostly reference versions <1.33 → extend versions (old release branches exist).
-- Measured: 5 changelogs (1.9 MB) + 5 doc versions (7,989 md pages, 89 MB) in ~95 s; re-run skips all.
+## D-005: Superseded — SHA-pinned release notes and sparse-clone docs
+- Kubernetes-only. Lesson kept: pin and record the exact upstream version of every source.
 
-## D-006: corpus_stats.py reports what Phase 2 will actually index
-- Decision: Typed CorpusStats from pure functions (issue_stats/release_notes_stats/docs_stats) + text and --markdown renderers; counts change entries, not raw bullets (skips TOC links and dependency bumps).
-- Options considered: Shell one-liners (wc/find); raw bullet counts; a notebook.
-- Why this one: Pure functions are unit-testable on a fake corpus; counting raw "- " lines inflated 1.33–1.37 entries 4,860 → real 3,327 (TOC + go.mod bumps). Also surfaces noise early: bot comments, incomplete comment threads, fix PRs without a release milestone (multi-hop gap).
-- Would change if: Phase 2 chunk counts disagree with these numbers → stats should read processed chunks instead.
-- Measured: release notes 3,327 entries (5 minors); docs 7,989 pages; issues pending fetch.
+## D-006: Superseded — Kubernetes corpus_stats.py
+- Replaced by a SQL-based corpus_stats.py (hard rule 5: numbers come from the database).
 
-## D-007: Phase 0 learning pack + README setup/stats section
-- Decision: docs/learning/phase-0.md (7 sections, 11 interview Qs) and README with setup and a corpus-stats table generated by `corpus_stats.py --markdown`.
-- Options considered: Hand-written stats in README vs. generated table.
-- Why this one: Generated table can't drift from the data; the gate requires stats in README.
-- Would change if: n/a
-- Measured: n/a
+## D-007: Superseded — Kubernetes learning pack and README stats
+- Replaced by the product-evidence learning pack.
 
-## D-008: Issue fetch result — 2,799 issues (below ~5K); version gap surfaced
-- Decision: Keep the strict "merged, GitHub-linked fix PR" filter and the 2022-01-01 floor; report the shortfall instead of loosening silently. Scope change left to the owner.
-- Options considered: Lower closed_after to ~2019 (≈5K, older versions); keep unmerged-PR issues (+800, weaker fix ground truth); accept 2,799; add more repos (v2 plan).
-- Why this one: The merged fix is the ground truth for fix_lookup/multi_hop; diluting it to hit a round number would weaken every later metric.
-- Would change if: Golden-set authoring (Phase 1) can't find 30–40 good questions in 2,799 issues, or the owner sets the target firmly at 5K.
-- Measured: 2,799 issues / 2,945 fix PRs / 27,463 comments; 237 pages, ~11 min, ~500 GraphQL points; 800 skipped; fixes span v1.24–v1.38, only 924 (33%) in docs range 1.33–1.37.
+## D-008: Superseded — Kubernetes issue fetch result (2,799 issues, version gap)
+- Kubernetes-only; data and scripts removed.
