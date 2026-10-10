@@ -1,0 +1,26 @@
+# Local Postgres + pgvector: the single store for text, metadata and vectors (D-001).
+# Start: docker compose up -d   Check: docker compose ps   Stop: docker compose down
+# Credentials come from .env (copy .env.example); the defaults are for local dev only.
+services:
+  db:
+    image: pgvector/pgvector:pg17
+    container_name: footnote-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-footnote}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-footnote}
+      POSTGRES_DB: ${POSTGRES_DB:-footnote}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # Runs once, on first start with an empty volume.
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  pgdata:
