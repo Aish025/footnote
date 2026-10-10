@@ -1,7 +1,11 @@
-# Secrets — API keys live in .env, never committed
+# Secrets — tokens live in .env, never committed (hard rule 10)
 .env
 .env.*
 !.env.example
+
+# Corpus — never committed; rebuilt by scripts/fetch_*.py from data/manifest.yaml (hard rule 7)
+data/raw/
+data/processed/
 
 # Python
 __pycache__/
@@ -17,15 +21,8 @@ htmlcov/
 dist/
 build/
 
-# Generated indexes / caches (rebuilt from docs/raw)
-data/index/
-*.npy
-.cache/
-
 # Editors / OS
 .vscode/
 .idea/
 .DS_Store
 Thumbs.db
-
-docs/raw/
