@@ -42,3 +42,10 @@ as a record of what was tried and why it no longer applies.
 - Why this one: Official source, 4× smaller, streamed and gunzipped on the fly later (no 13 GB on disk); no new dependency (httpx already present). Range resume tested: truncated file → 206 → identical sha256.
 - Would change if: The lab host disappears or throttles below ~1 MB/s → switch URLs to the HF mirror (same content).
 - Measured: ~2.4 MB/s → ~25 min for the full set; Q&A files 13 s / 9 s.
+
+## D-010: v1 subset rule — 4 accessory buckets, 50–2,000 reviews, ≤1,000 per bucket, hash order
+- Decision: Buckets matched on category path (chargers: Chargers & Power Adapters; cables: Cables & Adapters; cases: Basic/Flip Cases; headsets: Single Ear Bluetooth Headsets); require title + features/description; 50–2,000 reviews counted in the reviews file; up to 1,000 per bucket in sha256(salt+parent_asin) order. Rule lives in data/manifest.yaml; scripts/select_subset.py writes data/processed/ + subset_report.json (funnel).
+- Options considered: Top-N by rating_number (popularity-biased, mega-products); random sample with seed (fine, but hash order is stable even if the candidate list changes); cap reviews per product (breaks SQL aggregate completeness).
+- Why this one: Every selected product keeps ALL its reviews → counts are true for the stored data; 460K/1.29M products have no listing text, so they can't support listing_claim/conflict questions; hash order is reproducible and unbiased by popularity. No earbuds category exists in this file (Electronics holds them) → closest bucket is single-ear headsets.
+- Would change if: Golden-set authors can't find enough conflict/compatibility questions in the subset, or a bucket ends up too small (funnel shows it) → adjust buckets/band in the manifest.
+- Measured: pending (funnel recorded after the run).

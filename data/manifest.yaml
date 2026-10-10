@@ -31,3 +31,26 @@ files:
     url: https://mcauleylab.ucsd.edu/public_datasets/data/amazon/qa/icdm/QA_Cell_Phones_and_Accessories.json.gz
     path: QA_Cell_Phones_and_Accessories_2019.json.gz
     bytes: 18550333
+
+# v1 subset rule (scripts/select_subset.py). Deterministic: same files + same rule -> same
+# products. Rationale and measured funnel: DECISIONS.md D-011 and data/processed/subset_report.json.
+subset:
+  # A product belongs to the first bucket whose names appear anywhere in its category path.
+  # Buckets are accessory types that invite compatibility/conflict questions.
+  # (No earbuds category exists in this file; they live in the Electronics category.)
+  buckets:
+    chargers: ["Chargers & Power Adapters"]
+    cables: ["Cables & Adapters"]
+    cases: ["Basic Cases", "Flip Cases"]
+    headsets: ["Single Ear Bluetooth Headsets"]
+  # Listing claims are evidence: skip products with neither feature bullets nor description.
+  require_listing_text: true
+  # Counted in the reviews file (not Amazon's rating_number). Every selected product keeps ALL
+  # its reviews, so SQL aggregates are complete; the cap stops a few 10K+-review products from
+  # dominating storage and retrieval.
+  min_reviews: 50
+  max_reviews: 2000
+  # Up to this many products per bucket, taken in sha256(salt + parent_asin) order:
+  # reproducible, and not biased towards the most popular products.
+  per_bucket: 1000
+  order_salt: footnote-v1

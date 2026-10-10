@@ -5,13 +5,18 @@ from __future__ import annotations
 from pathlib import Path
 
 import yaml
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 MANIFEST_PATH = REPO_ROOT / "data" / "manifest.yaml"
 RAW_DIR = REPO_ROOT / "data" / "raw"
 PROCESSED_DIR = REPO_ROOT / "data" / "processed"
 DOWNLOADS_RECORD = RAW_DIR / "_downloads.json"
+SUBSET_PRODUCTS = PROCESSED_DIR / "products.jsonl"
+SUBSET_REVIEWS = PROCESSED_DIR / "reviews.jsonl"
+SUBSET_QA = PROCESSED_DIR / "qa.jsonl"
+SUBSET_REPORT = PROCESSED_DIR / "subset_report.json"
+QA_OVERLAP_REPORT = PROCESSED_DIR / "qa_overlap.json"
 
 
 class DatasetInfo(BaseModel):
@@ -31,9 +36,25 @@ class FileSpec(BaseModel):
         return RAW_DIR / self.path
 
 
+class SubsetRule(BaseModel):
+    buckets: dict[str, list[str]]  # bucket -> category names (first matching bucket wins)
+    require_listing_text: bool
+    min_reviews: int = Field(gt=0)
+    max_reviews: int = Field(gt=0)
+    per_bucket: int = Field(gt=0)
+    order_salt: str
+
+    @model_validator(mode="after")
+    def bounds_are_ordered(self) -> SubsetRule:
+        if self.min_reviews > self.max_reviews:
+            raise ValueError("min_reviews must be <= max_reviews")
+        return self
+
+
 class Manifest(BaseModel):
     dataset: DatasetInfo
     files: dict[str, FileSpec]
+    subset: SubsetRule
 
 
 def load_manifest(path: Path = MANIFEST_PATH) -> Manifest:
