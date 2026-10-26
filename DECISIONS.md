@@ -55,7 +55,7 @@ as a record of what was tried and why it no longer applies.
 - Options considered: psycopg 3 (compiled DLL blocked by Windows Application Control on the dev machine — not bypassed); psycopg2 (same issue); SQLAlchemy/pandas to_sql (row INSERTs, heavy deps); pg8000 (pure Python, supports COPY).
 - Why this one: pg8000 needs no native code; COPY loads ~10^6 rows in seconds; staging + upsert makes re-runs idempotent and keeps stable ids for re-indexing. Arrays/specs staged as JSONB and converted in SQL (no hand-built array literals).
 - Would change if: Load time for v2 (millions of reviews) is dominated by Python-side escaping → psycopg binary in Docker/CI where DLL policy doesn't apply.
-- Measured: pending (row counts after load).
+- Measured: 2,816 products, 623,218 reviews (6,981 = 1.1% exact-duplicate review keys dropped), 2,371 Q&A (87 dropped) in 37 s end to end; re-run → identical counts in 45 s (idempotent).
 
 ## D-012: chunks.embedding is vector(384) — provisional
 - Decision: Size the column for BAAI/bge-small-en-v1.5 (384-d, English) via Settings.embedding_dim; no HNSW index yet.
