@@ -70,3 +70,10 @@ as a record of what was tried and why it no longer applies.
 - Why this one: Hard rule 5 — numbers come from the database. Stats double as a load check: they describe exactly what retrieval and aggregation will see. Also surfaces dedup risk (same user, same product, >1 review) and short-review noise early.
 - Would change if: Phase 2 real chunk counts differ from the estimate by >20% → replace the estimate with SELECT COUNT(*) FROM chunks.
 - Measured: pending (after load).
+
+## D-014: Use the older McAuley Q&A as optional evidence — overlap is small (59 products)
+- Decision: Load Q&A pairs whose ASIN equals a v1 parent_asin or a variant ASIN seen in its reviews; threshold min_matched_products = 50 (manifest) → met, qa.jsonl written and loaded.
+- Options considered: Skip Q&A entirely (simpler, but loses the qa_answer evidence type); match on parent_asin only (misses variant-keyed Q&A); fuzzy title matching across datasets (error-prone, unverifiable).
+- Why this one: Exact ASIN matching is verifiable; Q&A adds a third evidence type for compatibility questions where it exists. Recorded either way in data/processed/qa_overlap.json.
+- Would change if: Golden-set questions on these 59 products show Q&A answers add no recall over reviews → drop Q&A from v1; or v2 (full category) raises coverage enough to matter.
+- Measured: 59/2,816 v1 products (2.1%) have Q&A (63 ASINs, same set in both files) — cases 28, headsets 13, cables 9, chargers 9. 2,371 pairs loaded (2016: 538, 2019: 1,833); only 2,081 distinct (product, question, answer) → 290 cross-source duplicates to dedup in Phase 3. Check runs in 14 s.
