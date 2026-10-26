@@ -48,7 +48,7 @@ as a record of what was tried and why it no longer applies.
 - Options considered: Top-N by rating_number (popularity-biased, mega-products); random sample with seed (fine, but hash order is stable even if the candidate list changes); cap reviews per product (breaks SQL aggregate completeness).
 - Why this one: Every selected product keeps ALL its reviews → counts are true for the stored data; 460K/1.29M products have no listing text, so they can't support listing_claim/conflict questions; hash order is reproducible and unbiased by popularity. No earbuds category exists in this file (Electronics holds them) → closest bucket is single-ear headsets.
 - Would change if: Golden-set authors can't find enough conflict/compatibility questions in the subset, or a bucket ends up too small (funnel shows it) → adjust buckets/band in the manifest.
-- Measured: pending (funnel recorded after the run).
+- Measured: 2,816 products / 630,199 review lines selected from 1,288,490 products / 20.8M review lines. Funnel (in bucket → listing text → 50–2,000 reviews → selected): chargers 29,951 → 24,365 → 4,427 → 1,000; cases 525,158 → 383,126 → 19,606 → 1,000; cables 17,442 → 7,975 → 584 → 584; headsets 927 → 825 → 232 → 232. Cables and headsets are band-limited, not cap-limited. After load-time dedup the per-product minimum is 46 reviews.
 
 ## D-011: Schema (products, reviews, qa, chunks) loaded with pg8000 COPY + idempotent upserts
 - Decision: db/schema.sql (IF NOT EXISTS); load_db.py parses JSONL into Pydantic rows, drops exact-duplicate keys (counted), COPYs batches into a temp staging table, upserts with ON CONFLICT DO UPDATE in one transaction per table. review_id = sha256(user_id|parent_asin|asin|timestamp)[:24] (dataset has no review id).
@@ -69,7 +69,7 @@ as a record of what was tried and why it no longer applies.
 - Options considered: Count from JSONL files in Python (fast to write, but a second source of truth); pandas.
 - Why this one: Hard rule 5 — numbers come from the database. Stats double as a load check: they describe exactly what retrieval and aggregation will see. Also surfaces dedup risk (same user, same product, >1 review) and short-review noise early.
 - Would change if: Phase 2 real chunk counts differ from the estimate by >20% → replace the estimate with SELECT COUNT(*) FROM chunks.
-- Measured: pending (after load).
+- Measured: estimate 639,850 chunks (listing 6,827 + review 630,652 + Q&A 2,371); reviews 174 chars on average, 11.4% under 20 chars; 514 same-user/same-product pairs. Estimate vs real chunk count: pending Phase 2.
 
 ## D-014: Use the older McAuley Q&A as optional evidence — overlap is small (59 products)
 - Decision: Load Q&A pairs whose ASIN equals a v1 parent_asin or a variant ASIN seen in its reviews; threshold min_matched_products = 50 (manifest) → met, qa.jsonl written and loaded.
