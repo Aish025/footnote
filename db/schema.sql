@@ -9,7 +9,7 @@ CREATE EXTENSION IF NOT EXISTS vector;
 -- One row per product = Amazon parent_asin. Listing text is a CLAIM by the seller, not a spec.
 CREATE TABLE IF NOT EXISTS products (
     product_id      TEXT PRIMARY KEY,          -- parent_asin (stable id for citations)
-    subset_bucket   TEXT NOT NULL,             -- v1 selection bucket: chargers/cables/cases/earbuds
+    subset_bucket   TEXT NOT NULL,             -- v1 selection bucket: chargers/cables/cases/headsets
     title           TEXT NOT NULL,
     main_category   TEXT,
     categories      TEXT[] NOT NULL,
