@@ -3,9 +3,11 @@
 .env.*
 !.env.example
 
-# Corpus — never committed; rebuilt by scripts/fetch_*.py from data/manifest.yaml (hard rule 7)
+# Corpus — never committed; rebuilt by scripts/download_data.py from data/manifest.yaml (hard rule 7)
 data/raw/
 data/processed/
+# Run logs written next to the corpus (may quote review text)
+data/*.log
 
 # Python
 __pycache__/
